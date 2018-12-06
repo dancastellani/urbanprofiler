@@ -1,0 +1,43 @@
+#TODO: Implement Temporal Data Profiler
+#TODO: Fix profiling errors
+    >>> db['ETL-Profiler Status'].value_counts()
+    OK                                                              1691
+OK- Error Processing. Exception:None                                 421
+OK- Error Processing. Exception:'numpy.int64' object has no attribute 'is_integer'     300
+OK- Error Processing. Exception:Passed header=0 but only 0 lines in file     168
+    Error Processing. Exception:'top'                                 60
+    Error Processing. Exception:'numpy.int64' object has no attribute 'strip'      20
+    Error Processing. Exception:'unique'                              10
+    Error Processing. Exception:'numpy.float64' object has no attribute 'strip'       9
+    Error Processing. Exception:'bool' object has no attribute 'strip'       3
+    Error Processing. Exception:'int' object has no attribute 'is_integer'       3
+    Error Processing. Exception:File /projects/open/nycopendata/data/rhe8-mgbb/1400173321/rhe8-mgbb does not exist       1
+    Error Processing. Exception:File /projects/open/nycopendata/data/nfdd-74ju/nfdd-74ju.json/nfdd-74ju does not exist       1
+    Error Processing. Exception:File /projects/open/nycopendata/data/vpwc-hpp7/1400086334/vpwc-hpp7 does not exist       1
+    Error Processing. Exception:File /projects/open/nycopendata/data/uy9r-u7if/uy9r-u7if.json/uy9r-u7if does not exist       1
+    Error Processing. Exception:File /projects/open/nycopendata/data/7izg-a7zn/7izg-a7zn.json/7izg-a7zn does not exist       1
+    ...
+    Error Processing. Exception:File /projects/open/nycopendata/data/2jq5-qxzu/2jq5-qxzu.json/2jq5-qxzu does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/e8jb-m89r/e8jb-m89r.json/e8jb-m89r does not exist    1
+    Error Processing. Exception:[Errno 2] No such file or directory: '/projects/open/nycopendata/data/fvrb-kbbt/1400171524/fvrb-kbbt'    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/6czp-hu6e/6czp-hu6e.json/6czp-hu6e does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/hxp7-h4ef/1400173126/hxp7-h4ef does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/x8us-n8h3/1400171524/x8us-n8h3 does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/jvgk-jtds/1400171524/jvgk-jtds does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/rms5-4jgf/1400172067/rms5-4jgf does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/pm4y-qqzt/1400086334/pm4y-qqzt does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/4jsk-k6nt/4jsk-k6nt.json/4jsk-k6nt does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/nfae-rhcr/1400086334/nfae-rhcr does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/pgjy-zpbp/pgjy-zpbp.json/pgjy-zpbp does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/stz9-szbs/1400086334/stz9-szbs does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/d993-iye3/d993-iye3.json/d993-iye3 does not exist    1
+    Error Processing. Exception:File /projects/open/nycopendata/data/hxn7-3ruv/1399173808/hxn7-3ruv does not exist    1
+    Length: 406, dtype: int64
+
+
+##################
+# To run plot and profiler verbose on database
+--verbose --to_folder=/home/danielcastellani/Documents/databases/etl-profilers/w_plots --stop_on_error --plot --file=/home/danielcastellani/Documents/databases/open-data-nyc/311_Service_Requests_from_2010_to_Present.csv
+
+# To run only ploter on ETL-Profiler_Sumary
+

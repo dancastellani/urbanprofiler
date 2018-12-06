@@ -1,0 +1,270 @@
+/* -- because of fixed to top navbar */
+/*body { padding-top: 70px; }*/
+
+html, body { height: 90%; }
+
+// Class
+.center-block {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+// Usage as a mixin
+.element {
+  .center-block();
+}
+
+
+#dataset-actions {
+  padding-right:10px;
+  padding-left:10px;
+  padding-bottom:5px;
+  padding-top:5px;
+
+  background-color: #f7f7f9;
+  border-radius: 4px;
+  border: 1px solid #e1e1e8;
+}
+
+#dataset-actions .header {
+  font-weight: bold;
+  font-size: 25px;
+  color: #777;
+}
+
+#dataset-actions .hue-logo {
+  width: 80px;
+  height: auto;
+  padding: 5px;
+  background-color:#7B0099;
+  border-radius: 5px;
+  margin-top: -10px;
+}
+
+#c1{
+ float:left;
+}
+
+#filters-col {
+}
+
+#filters .filter_item {
+  margin-left:-20px !important;
+}
+
+#filters h4 {
+  font-weight: bold;
+}
+
+#filters .active {
+  font-weight: bold;
+  color: black;
+  text-decoration: underline;
+}
+
+
+/*#filters .list-group-item-text-text {
+  margin-bottom: 0px;
+  }*/
+
+/*.pagination {
+  display:block;
+  align:center-block;
+}
+
+.pagination:before {
+    content: "";
+    display: block;
+    }*/
+
+    .auto-dropdown:hover .dropdown-menu {
+      display: block;
+      margin-top: 0; // remove the gap so it doesn't close
+    }
+
+    /* ------ animated loading ------ */
+    .glyphicon-refresh-animate {
+      -animation: spin .7s infinite linear;
+      -webkit-animation: spin2 .7s infinite linear;
+    }
+
+    @-webkit-keyframes spin2 {
+      from { -webkit-transform: rotate(0deg);}
+      to { -webkit-transform: rotate(360deg);}
+    }
+
+    @keyframes spin {
+      from { transform: scale(1) rotate(0deg);}
+      to { transform: scale(1) rotate(360deg);}
+    }
+    /* ------ end animated loading ------ */
+
+    #searchmap-dataset-table{
+      max-height:1100px;
+      height:100%;
+      width: 100%;
+      overflow:scroll;
+      overflow-x:hidden;
+    }
+
+    #map-canvas{
+      position: relative;
+      width: 100%;
+      height: 55%;
+      /*height: 700px;*/
+      /*height: 580px;*/
+      display: block; 
+      /* background-color: orange */
+    }
+
+    #content{
+      height:100%;
+      width:100%;
+    }
+
+    .full {
+      height:100%;
+      width:100%;
+    }
+
+    #search-map-content {
+      margin-right: 0px;
+      margin-left: 0px;
+    }
+
+    #map_container {
+      height:80%;
+  /*padding-left: 0px !important;
+  padding-right: 0px !important;*/
+}
+
+#map-search-canvas{
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block; 
+}
+
+#timeline-canvas{
+  width: 100%;
+  height: 20%;
+  min-height: 200px;
+  border-radius: 5px;
+  border-color: gray;
+  /*background-color: orange; */
+}
+
+.right {
+  float: right;
+}
+
+#logo-cusp{
+  float: right;
+  width: 210px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+#beta-ribbon{
+  float: left;
+  max-height: 40px;
+  max-width: 40px;
+  width: 40px;
+  height: 40px;
+  position: absolute;
+  top: 0; 
+  left: 0;
+}
+
+#beta-tag{
+  float: left;
+  max-height: 100px;
+  max-width: 100px;
+  width: 100px;
+  height: 100px;
+  position: absolute;
+  top: 10; 
+  left: 0;
+}
+
+#logo-nyu{
+  float: right;
+}
+
+div.chart {
+  margin: 5px;
+  padding: 10px;
+  display: inline-block;
+  position: relative;
+}
+/*Line spaces after breaks are considered in the text. So, text on new lines should start at begining of HTML line (just after the breakline).*/
+.tooltip-inner {
+  white-space:pre-wrap;
+  max-width:none;
+}
+
+.labels {
+ color: red;
+ background-color: white;
+ font-family: "Lucida Grande", "Arial", sans-serif;
+ font-size: 10px;
+ font-weight: bold;
+ text-align: center;
+ width: 65px;     
+ border: 2px solid black;
+ white-space: nowrap;
+}
+
+.no-data {
+  color: gray;
+}
+
+.starter-template-content {
+  padding: 20px 15px;
+}
+
+.logos{
+  display: block;
+}
+
+.show-border {
+  border-color: #ddd; 
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.shadow {
+  padding: 20px;
+  border: 1px solid #f0f0f0;
+  border-bottom: 2px solid #ccc;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+
+.container { 
+  /*To deal with Twitter Bootstrap max width*/
+  width: auto !important; 
+}
+
+.green{
+  color:green
+}
+
+.red{
+  color:red
+}
+
+.black {
+  color: black;
+}
+
+.blue{
+  color:blue
+}
+
+.gray{
+  color:gray
+}

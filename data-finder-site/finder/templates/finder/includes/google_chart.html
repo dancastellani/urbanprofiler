@@ -1,0 +1,174 @@
+{# data={{data}} #}
+<div id="div_{{type|default:'column'}}_chart_{{id}}" style="width:100%; height:100%"></div>
+
+{% load humanize %}
+
+<!--Load the AJAX API-->
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+{% autoescape off %}
+<script type="text/javascript">
+  // Load the Visualization API and the piechart package.
+  google.load('visualization', '1.0', {'packages':['corechart']});
+  // Set a callback to run when the Google Visualization API is loaded.
+  google.setOnLoadCallback(drawChart_{{id}});
+  $(window).on("throttledresize", function (event) {
+    drawChart_{{id}}();
+  });
+
+  // Callback that creates and populates a data table,
+  // instantiates the pie chart, passes in the data and
+  // draws it.
+  function drawChart_{{id}}() {
+    {% if data %}
+    var chart_data = {{data|safe}};
+    reallyDrawChart_{{id}}(chart_data);
+    {% elif data_from %}
+    $.getJSON( "{{data_from}}", function( data ) { 
+
+      // console.log('JSON CALL');
+      // console.log(data);
+      // if ( data != null && data.lengt > 0 ){
+        reallyDrawChart_{{id}}(data);
+      // }
+    });
+    
+    {% else %}
+    console.log('Error: No data of from data found!');
+    {% endif %}
+  }
+
+  $(window).on("throttledresize", function (event) {
+    console.log('resized')
+    reallyDrawChart_{{id}}();
+  });
+
+  function reallyDrawChart_{{id}}(chart_data){
+    // Set chart options
+    var options = {
+      'title':'{{ title }}',
+      'width':{{width|default:350}},
+      'height':{{height|default:300}},
+      {%if colors %}'colors': {{colors}}, {%endif%}
+      'is3D': {{is_3d|default:"true"}},
+      'titleTextStyle': {fontSize: 15, bold: true},
+      // animation: {duration: 2},
+      animation: {"startup": true},
+    };
+
+    {% if options %}
+    var more_options = {{options}}
+    for (var attrname in more_options) { options[attrname] = more_options[attrname]; }
+    {% endif %}
+
+    // Instantiate and draw our chart, passing in some options.
+    var chart_div = document.getElementById("div_{{type|default:'column'}}_chart_{{id}}");
+    var chart = null;
+
+    // var legend= {{legend|default:'"Count"'}}
+    // Create the data table.
+    var data = null;
+
+    {% with default_chart='column' %}
+    {% if type|default:default_chart == 'column' %} 
+    // ------------------------------------------------------------> Column Chart
+    chart_data = [['Element', {{legend|default:'"Count"'}}]].concat(chart_data);
+    {%if colors%}chart_data = prepareColors(chart_data, {{colors|default:'null'}}); {%endif%}
+
+    data = new google.visualization.arrayToDataTable( chart_data );
+    chart = new google.visualization.ColumnChart( chart_div );
+    // options.hAxis = {fontName: 'Times', fontSize: 30, slantedTextAngle: 30}
+    {% if x_title %}
+    options.hAxis.title = {{x_title}} 
+      //= {title: {{x_title}}, titleTextStyle: {color: 'red'}};
+      {% endif %}
+      {% if not legend %}
+      options.legend = {position:'none'};
+      {% endif %}
+      {% if legend_position %}
+      options.legend = {position:'{{legend_position}}'};
+      {% endif %}
+
+      {% elif type|default:default_chart == 'area' %} 
+      // ------------------------------------------------------------> Area Chart
+      chart_data = [['Element', {{legend|default:'"Count"'}}]].concat(chart_data);
+      {%if colors%}chart_data = prepareColors(chart_data, {{colors|default:'null'}}); {%endif%}
+
+      data = new google.visualization.arrayToDataTable( chart_data );
+      chart = new google.visualization.AreaChart( chart_div );
+      // options.hAxis = {fontName: 'Times', fontSize: 30, slantedTextAngle: 30}
+      {% if x_title %} options.hAxis = {title: {{x_title}}} {% endif %}
+      {% if not legend %} options.legend = {position:'none'}; {% endif %}
+      {% if legend_position %} options.legend = {position:'{{legend_position}}'}; {% endif %}
+
+
+      {% elif type|default:default_chart == 'bar' %}
+    // ------------------------------------------------------------> Bar Chart
+    chart_data = [['Element', {{legend|default:'"Count"'}}]].concat(chart_data)
+    {%if colors%}chart_data = prepareColors(chart_data, {{colors|default:'null'}}); {%endif%}
+
+    data = new google.visualization.arrayToDataTable( chart_data );
+
+    chart = new google.visualization.BarChart( chart_div );
+    {% if not legend %}
+    options.legend = {position:'none'}
+    {% endif %}
+    {% if legend_top %}
+    options.legend = {position:'top'}
+    {% endif %}
+    // console.log('data_length=' + chart_data.length);
+    // var auto_width = 400;
+    // options.width= {{width|default:'auto_width'}};
+    // var auto_height = chart_data.length * 30;
+    // options.height= {{height|default:'auto_height'}};
+    options.bar = {groupWidth: '95%'};
+    options.chartArea = {top:10}
+    
+    {% elif type|default:default_chart == 'histogram' %}
+    // ------------------------------------------------------------> Histogram Chart
+    chart_data = [['Element']].concat(chart_data)
+    data = new google.visualization.arrayToDataTable( chart_data );
+    chart = new google.visualization.Histogram( chart_div );
+    console.log('legend: {{legend|default:"vazio"}}');
+    console.log('title: {{title|default:"vazio"}}');
+    console.log('options: ');
+    console.log(options);
+    {% if not legend %}
+    options.legend = {position:'none'}
+    {% endif %}
+    {% if legend_top %}
+    options.legend = {position:'top'}
+    {% endif %}
+    options.histogram = {  hideBucketItems:true 
+                        // ,bucketSize: 25
+                        // ,lastBucketPercentile: 5
+                      }
+                      {% if colors %} options.histogram.colors = {{colors}} {%endif%}
+      // options.chartArea = {top:10}
+      // options.chartArea.height = '70%'
+
+      {% elif type|default:default_chart == 'pie' %}
+    // ------------------------------------------------------------> Pie Chart
+    console.log('Pie: ', {{data|safe}})
+    data = new google.visualization.DataTable();
+    data.addColumn('string', 'Label');
+    data.addColumn('number', 'Value');
+    data.addRows( chat_data );
+    chart = new google.visualization.PieChart( chart_div );
+    options.chartArea = {left:10,top:10,width:'90%',height:'90%'}
+    {% endif %}
+    {% endwith %}
+    chart.draw(data, options);
+  }
+
+  function prepareColors(data, colors){
+    if (colors != null){
+      data[0][data[0].length] = { role: 'style' }
+
+      for (i = 1; i < data.length; i++) { 
+        data[i][data[i].length] = colors[i-1];
+      }
+    }
+    return data
+  }
+  </script>
+  {% endautoescape  %}

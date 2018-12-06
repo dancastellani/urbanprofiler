@@ -1,0 +1,500 @@
+{% extends "finder/base.html" %}
+{% load finder_extras %}
+{% load humanize %}
+
+{% block title %}{{ databaseBoundingBox.database_id }} 
+Search Map
+{% endblock title%}
+
+{% block content %}
+<!-- 
+map_style = {{map_style}} <br>
+named_areas = {{named_areas}} 
+-->
+<!-- Instruction -->
+
+
+<nav class="navbar navbar-default" role="navigation">
+  <div class="row" id="filters-bar">
+    <div class="col-lg-12">
+      <div class="col-lg-12">
+        <a class="navbar-brand">Filters </a>
+        <!-- Search Menu -->
+        <div class="navbar-form navbar-left" id="map_filter">
+          <div class="col-lg-12" id="page-menu-container">
+
+            <!-- ############################ Filter Area ############################ -->
+            <div class="btn-group auto-dropdown" id='btnGroupFilterArea' role="group">
+              <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">By Time/Space
+                <span class="caret"></span>
+              </button>
+              <ul class="nav dropdown-menu dropdown-menu-right" role="menu">
+                <li role="presentation"><a id="button-filter-by-gps" onclick="showMapFilter()" data-placement="top" title="Resize black rectangle to define filter area, then click on Filter.">on Map (by GPS)</a>
+                </li>
+                <li role="presentation"><a data-toggle="modal" data-target="#modalZipcodeSelection">by Zipcode</a></li>
+                <li role="presentation"><a data-toggle="modal" data-target="#modal_filter_by_date">by Date</a></li>
+              </ul>
+            </div>
+            <!-- ############################ Modal Zipcode Selection ############################ -->
+            <div id="modalZipcodeSelection" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" >
+              <div class="modal-dialog" role="document">
+                <div class="modal-dialog modal-sm">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                      <h4 class="modal-title" id="myModalLabel">Filter by Zipcode</h4>
+                    </div> 
+                    <div class="modal-body">
+                      <input type="number" onkeypress="return isNumberKey(event)" class="form-control" placeholder="Zipcode" id="inputZipcode" required>
+                      <button class="btn btn-success" type="button" onClick="filterByZipcode()"> OK </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- ############################ End Modal Zipcode Selection ############################ -->
+            {% include "finder/includes/modal_filter_by_date_range.html" %}
+
+            <button type="button" id="button-filter-by-gps-now" class="btn btn-warning" onclick="filterOnMap()" style="display: none;" data-toggle="tooltip" data-placement="top" title="Resize black rectangle to define filter area, then click here.">Filter</button>
+
+            <!-- ############################ View As - Map type ############################ -->
+            {% if 'DEVELOPMENT'|is_current_env %}
+            <div class="btn-group auto-dropdown" role="group">
+              <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">View As
+                <span class="caret"></span>
+              </button>
+              <ul class="nav dropdown-menu dropdown-menu-right" role="menu">
+                <li role="presentation"><a href="{% url_add_query map_style='boxes' %}">Boxes</a></li>
+                {# <li role="presentation"><a href="{% url_add_query map_style='borough' %}">Borough</a></li> #}
+                <li role="presentation"><a href="{% url_add_query map_style='single-heatmap' %}">Heatmap</a></li>
+              </ul>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- ################# Filters ################# -->
+        {% include "finder/includes/datasets_filter.html" with filter_by_profiler_status=False inside_bar=True %}
+      </div>
+    </div>
+  </nav>
+
+
+  <div class="row full" id='search-map-content'>
+    <!-- Map -->
+    <div class="col-xs-7 col-sm-7 col-md-8 col-lg-9 col-xl-11 full" id="map_container">
+      <div class="shadow full" id="map-search-canvas">
+        {% include "finder/includes/loading.html" with message='Loading Map...'%}
+      </div>    
+      <div id='timeline-area'>
+        {% include "finder/includes/timeline.html" %}
+      </div>    
+    </div>
+
+    <!-- Databases -->
+    <div class="col-xs-5 col-sm-5 col-md-4 col-lg-3 col-xl-1" id="databases-container">
+      <div class="panel panel-default">
+        <div class="panel-heading">Datasets <span class="badge">{{databaseBoundingBoxes|length}}</span>
+        </div>
+        <div class="panel-body" id='searchmap-dataset-table'>
+          <!-- Javascript will insert rows with db_list -->
+          <table class="table table-striped" id="databases-table" style="100%"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+{% endblock content %}
+
+{% block scripts %}
+
+<!-- <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script> -->
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=drawing"></script>
+<script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerwithlabel/1.1.5/src/markerwithlabel_packed.js"></script>
+
+<script>
+function filterByZipcode(){
+  var zipcode = $('#inputZipcode').val();
+  if (zipcode == null){
+    alert('Provide a zipcode first.') ;
+    return;
+  }
+
+  var url = '' + window.location;
+
+  if(zipcode != null && zipcode != ''){ 
+    url = updateQueryStringParameter(url, 'zipcode', zipcode); 
+  }
+}
+
+/* tooltip of filter */
+$(function () {$('[data-toggle="tooltip"]').tooltip()})
+var map;
+var NYC_CENTER_LAT = 40.743849
+var NYC_CENTER_LONG = -73.999289
+var NYC_CENTER = new google.maps.LatLng(NYC_CENTER_LAT, NYC_CENTER_LONG);
+var allDataBounds;
+
+var heatmap;
+function drawHeatmap(){
+  console.log('Creating heatmap data');
+  var heatmap_data = [
+  {% for gps in gps_data %}
+  { location: new google.maps.LatLng({{gps.0}}, {{gps.1}}), weight: {{gps.2}} },
+  {% endfor %}
+  ];
+
+  console.log('data=' + heatmap_data);
+  console.log('map='+map)
+
+  console.log('Creating Heatmap layer');
+  heatmap = new google.maps.visualization.HeatmapLayer({data: heatmap_data});
+  heatmap.set('opacity', 0.9);
+  heatmap.set('radius', 20)
+  heatmap.setMap(map);
+
+  console.log('Heatmap Created');
+  map.fitBounds();
+}
+
+function updateDataBounds(){
+  if (db_list.lenght < 1){ return }
+
+    var dataBoxLatMin = db_list[0].box.getBounds().getSouthWest().lat();
+  var dataBoxLatMax = db_list[0].box.getBounds().getSouthWest().lng();
+  var dataBoxLongMin = db_list[0].box.getBounds().getNorthEast().lat();
+  var dataBoxLongMax = db_list[0].box.getBounds().getNorthEast().lng();
+  for (i = 0; i < db_list.length; i++) { 
+    box = db_list[i].box
+    if ( box.getBounds().getSouthWest().lat() < dataBoxLatMin ){ 
+      dataBoxLatMin = box.getBounds().getSouthWest().lat()
+    }
+    if ( box.getBounds().getSouthWest().lng() < dataBoxLongMin ){ 
+      dataBoxLongMin = box.getBounds().getSouthWest().lng()
+    }
+    if ( box.getBounds().getNorthEast().lat() > dataBoxLatMax ){ 
+      dataBoxLatMax = box.getBounds().getNorthEast().lat()
+    }
+    if ( box.getBounds().getNorthEast().lng() > dataBoxLongMax ){ 
+      dataBoxLongMax = box.getBounds().getNorthEast().lng()
+    }
+  }
+
+  allDataBounds = new google.maps.LatLngBounds(
+    new google.maps.LatLng(dataBoxLatMin, dataBoxLongMin),
+    new google.maps.LatLng(dataBoxLatMax, dataBoxLongMax)
+    );
+}
+
+{% if named_areas %}
+var areas = [];
+function plotNamedAreas(){
+  {% autoescape off %}
+  var namedAreas = {{ named_areas }}
+  {% endautoescape %}
+
+  console.log('Creating named areas on map.');
+  for (k = 0; k < namedAreas.length; k++) {
+    var title = namedAreas[k].title;
+    var polygons = namedAreas[k].geojson.coordinates[0];
+    var currentAreaPolygons = [];
+    console.log((k+1)+ ". Creating " + title + ' with ' + polygons.length + ' polygons.');  
+
+    //Create paths
+    var coords = [];
+    for (i = 0; i < polygons.length; i++) {
+      coords[i] = [];
+
+      for (j = 0; j < polygons[i].length; j++) {
+        coords[i][j] = new google.maps.LatLng(polygons[i][j][1], polygons[i][j][0]);
+      }
+      console.log('    Created path ' + (i+1) + ' with ' + polygons[i].length + ' points.'); 
+    }
+
+      // Construct the polygon.
+      pol = new google.maps.Polygon({
+        paths: coords,
+        strokeColor: '#FF0000',
+        strokeOpacity: 0.8,
+        strokeWeight: 3,
+        fillColor: '#FF0000',
+        fillOpacity: 0.35,
+        map: map
+      });
+
+      // Add a listener for the click event.
+      with ({ foo: title }) {
+        google.maps.event.addListener(pol, 'click', function(event) {
+          infoWindow = new google.maps.InfoWindow();
+          infoWindow.setContent(foo);
+          infoWindow.setPosition(event.latLng);
+
+          infoWindow.open(map);
+        });
+      }
+      areas[k] = currentAreaPolygons;
+    }
+  }
+  {% endif %}
+
+  function fitMapToDataBounds(){
+    updateDataBounds();
+    map.fitBounds(allDataBounds);
+  }
+
+  var db_list = []
+  function initialize_db_list() {
+   {% for box in databaseBoundingBoxes %}
+   db_list[{{ forloop.counter0 }}] = {
+     database_id: "{{ box.title }}",
+     lat_min: {{ box.lat_min }},
+     lat_max: {{ box.lat_max }},
+     long_min: {{ box.long_min }},
+     long_max: {{ box.long_max }},
+     gps_values: {{ box.gps_values }},
+     link: "{% url 'finder:detail-database' box.database_id %}",
+     more_info: "Description: {{ box.description|escapejs }} \n---\n Records with GPS: {{box.gps_values|intcomma}} \n Time: {{ box.date_min|date:'SHORT_DATE_FORMAT' }} - {{ box.date_max|date:'SHORT_DATE_FORMAT' }}",
+     selected: true
+   };
+   {% endfor %}
+ }
+
+ function highlightBox(i, on) {
+  highlightStyle = {'strokeColor': '#0000FF', 'strokeOpacity': 0.7, zIndex: 3}
+  normalStyle = {'strokeColor': '#FF0000', 'strokeOpacity': 0.25, zIndex: 3}
+
+  {% if map_style == 'boxes' %}
+  if (on){
+    // console.log('highlight db: ' + i + ' - ' + db_list[i].database_id)
+    db_list[i].box.setOptions( highlightStyle );
+    // console.log('ok')
+  }else{
+    // console.log('unHighlight db: ' + i + ' - ' + db_list[i].database_id)
+    db_list[i].box.setOptions( normalStyle );
+    // console.log('ok')
+  }
+  {% elif map_style == 'borough' %}
+  //Show box
+  if (on){
+    db_list[i].box.setOptions( highlightStyle );
+    db_list[i].box.setOptions( {visible: true} );
+  }else{
+    db_list[i].box.setOptions( normalStyle );
+    db_list[i].box.setOptions( {visible: false} );
+  }
+  //highlight areas
+  var bounds = db.box.getBounds();
+  sw = bounds.getNorthEast();
+  ne = bounds.getSouthWest();
+  se = new google.maps.LatLng(sw.lat, ne.long);
+  nw = new google.maps.LatLng(ne.lat, sw.long);
+  console.log('sw = ' + sw);
+  console.log('ne = ' + ne);
+  for (i = 0; i < areas.length; i++){
+    var contains_box = false;    
+    for (j = 0; j < areas[i].length; j++){
+      if ( google.maps.geometry.poly.containsLocation( sw, areas[i][j] ) 
+        || google.maps.geometry.poly.containsLocation( ne, areas[i][j] ) 
+        || google.maps.geometry.poly.containsLocation( se, areas[i][j] ) 
+        || google.maps.geometry.poly.containsLocation( nw, areas[i][j] ) ){ 
+        contains_box = true 
+    }
+  }
+  console.log(i + ' Contains: ' + contains_box)
+  if (contains_box){
+    for (j = 0; j < areas[i].length; j++){
+      if (on){
+        areas[i].setOptions( highlightStyle );
+      }else{
+        areas[i].setOptions( normalStyle );
+      }
+    }
+  } 
+}
+{% endif %}
+}
+
+function create_db_table(){
+  var db_table = $('#databases-table');
+
+  for (i = 0; i < db_list.length; i++) { 
+    db = db_list[i]
+    // console.log(db);
+    // console.log('Adding to Databases Table: ' + db.database_id);
+        /*db_table.append(
+          "<tr> <td> " + db.database_id + " </td> </tr>"
+          );*/
+var checked = "";
+        // if (db.selected) {
+        //   checked += "checked";
+        // }
+        var checkbox = "<input class='db-checkbox' type='checkbox' value='" + i + "' id='cbdb_" + i + "' " + checked + "/> ";
+        db_table.append("<tr> <td> " + checkbox + 
+          "<a id=\"db_"+i+"\" data-toggle=\"tooltip\" data-placement=\"top\" title=\""+db.more_info+"\" href='"+ db.link + "' onmouseover=\"highlightBox(" + i + ", true)\" onmouseout=\"highlightBox(" + i + ", false)\">" + db.database_id + "</a>"
+          // + "<span class='badge'>" + db.gps_values + "</span>"
+          //+ " <span id=\"mi_"+i+"\" class=\"glyphicon glyphicon-comment\" aria-hidden=\"true\" data-toggle=\"tooltip\" data-placement=\"top\" title=\""+db.more_info+"\"></span>"
+          + "</td> </tr>");
+        $('#db_'+i).tooltip({});
+      }
+      // Add the onchange event listener to the checkboxes
+      $("#databases-table :checkbox").click(function() {
+        console.log('Click on checkbox');
+        var index = this.value;
+        console.log('Changed checkbox:' + index + ' to ' + this.checked);
+        db_list[index].selected = this.checked;
+        //db_list[index].box.setVisible(db.selected);
+        if (this.checked){db_list[index].box.setMap(map)}else{db_list[index].box.setMap(null)}
+      });
+      update_db_table()
+    }
+    function update_db_table(hideUnselecteds) {
+      if (typeof hideUnselecteds === 'undefined'){ hideUnselecteds= false;}
+      var db_table = $('#databases-table');
+
+      for (i = 0; i < db_list.length; i++) { 
+        db = db_list[i]
+        if (db.selected) {
+          document.getElementById("cbdb_"+ i).checked = true;
+          $("#cbdb_"+ i).parent().removeClass('hidden')
+
+        }else{
+          document.getElementById("cbdb_"+ i).checked = false;
+          if (hideUnselecteds) {
+            $("#cbdb_"+ i).parent().addClass('hidden')
+          }
+        }
+      }
+    }
+
+    var filterRectangle;
+    var drawingManager = new google.maps.drawing.DrawingManager();
+    function showMapFilter() {
+      $('#btnGroupFilterArea').hide();
+      $('#button-filter-by-gps-now').show();
+      $('#button-reset').show();
+      // Define a rectangle and set its editable property to true.
+      // filterRectangle = new google.maps.Rectangle({
+      //   bounds: map.getBounds(),
+      //   editable: true,
+      //   draggable: true,
+      //   zIndex: 2,
+      //   map: map
+      // });
+      // fitMapToDataBounds();
+      // map.setZoom(map.getZoom()-1);
+
+      ///Setting options for the Drawing Tool. In our case, enabling Polygon shape.
+      if (drawingManager.getMap()) {
+        drawingManager.setMap(null);
+      }
+      drawingManager.setOptions({
+        drawingMode : google.maps.drawing.OverlayType.RECTANGLE,
+        drawingControl : true,
+        drawingControlOptions : {
+          position : google.maps.ControlPosition.TOP_CENTER,
+          drawingModes : [ google.maps.drawing.OverlayType.RECTANGLE ]
+        },
+        rectangleOptions : {
+          strokeColor : '#6c6c6c',
+          strokeWeight : 3.5,
+          fillColor : '#926239',
+          fillOpacity : 0.6,
+                  editable: true,
+                draggable: true
+        } 
+      });
+      // Loading the drawing Tool in the Map.
+      drawingManager.setMap(map);
+
+
+      google.maps.event.addListener(drawingManager,'rectanglecomplete',function(polygon){
+        // window.alert('done');
+        filterRectangle = polygon;
+        drawingManager.setMap(null); //Remove the options from DrawerManager
+        google.maps.event.addListener(filterRectangle, 'bounds_changed', filterDatabases);
+      });
+    }
+    
+    function filterOnMap() {
+      filterDatabases(null);
+      filterRectangle.setMap(null);
+      fitMapToDataBounds();
+      update_db_table(true);
+
+      $('#btnGroupFilterArea').show();
+      $('#button-filter-by-gps-now').hide();
+      
+    }
+
+    function filterDatabases(event) {
+      console.log("Filtering databases by map box.")
+
+      for (i = 0; i < db_list.length; i++) { 
+        db = db_list[i];
+        var share = filterRectangle.getBounds().intersects(db.box.getBounds())
+        // console.log(db.database_id + ' intersects with bounds: ' + share)
+
+        if (share){
+          db.box.setMap(map);
+          db.selected = true;
+          // console.log('Show db: ' + db.database_id);
+        }else{
+          db.box.setMap(null);
+          db.selected = false;
+          // console.log('Hide db: ' + db.database_id);
+        }
+      }
+      update_db_table();
+    }
+
+    function initialize() {
+    	initialize_db_list();
+      create_db_table();
+
+      var mapOptions = {
+       zoom: 10,
+       center: NYC_CENTER
+     };
+     map = new google.maps.Map(document.getElementById('map-search-canvas'), mapOptions);
+
+     var map_type = "{{map_style}}";
+     if ( map_type == 'borough'){
+      plotNamedAreas();
+    } else if ( map_type == 'single-heatmap'){
+      drawHeatmap();
+    } 
+
+    createBoxes();
+
+  }
+  google.maps.event.addDomListener(window, 'load', initialize);
+
+  function createBoxes(){
+    for (i = 0; i < db_list.length; i++) { 
+      db = db_list[i]
+    //console.log('Creating bunding box for database: ' + db.database_id)
+
+    var visible = '{{map_style}}' == 'boxes';
+
+    //create box
+    db.box = new google.maps.Rectangle({
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.25,
+      strokeWeight: 2,
+      fillColor: '#FF0000',
+      fillOpacity: 0.02,
+      zIndex: 1,
+      visible: visible,
+      map: map,
+      bounds: new google.maps.LatLngBounds(
+        new google.maps.LatLng( db.lat_min ,  db.long_min ),
+        new google.maps.LatLng( db.lat_max ,  db.long_max )
+        )
+    });
+  }
+  fitMapToDataBounds();
+} 
+</script>
+
+{% endblock scripts %}

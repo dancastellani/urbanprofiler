@@ -1,0 +1,110 @@
+{% load i18n %}
+{% load finder_extras %}
+{% load humanize %}
+
+<div class="modal fade" id="modal_custom_filter" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title" id="myModalLabel">Custom Filter</h4>
+			</div>
+
+			<div class="modal-body">
+				<div class="container">
+					<div class="row">
+						<div class="col-lg-6">
+							<div class="input-group">
+								<input type="text" class="form-control" aria-label="...">
+								<div class="input-group-btn">
+									<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">Columns <span class="caret"></span></button>
+									<ul class="dropdown-menu " role="menu" id="dropdownColumns">
+										{% with 60 as name_limit %}
+										{% for item in column_filter_options %}
+										<li role="presentation">
+											<a role="menuitem" tabindex="-1" data-name="{{item.name}}">
+												{{item.name|truncatechars:name_limit}}
+
+												{% if item.name|length > name_limit %}
+												<span class="glyphicon glyphicon-plus" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{item.name|slice_in_sizes_of:30|join:' '}}"/>
+												{% endif %}
+											</a>
+										</li>
+										{% endfor %}
+										{% endwith %}
+									</ul>
+								</div><!-- /btn-group -->
+							</div><!-- /input-group -->
+						</div><!-- /.col-lg-6 -->
+
+						<div class="col-lg-2">
+							<div class="input-group">
+							<input type="number" onkeypress="return isNumberKey(event)" class="form-control" placeholder="Min" id="inputMin">
+						</div><!-- /input-group -->
+					</div><!-- /.col -->
+					<div class="col-lg-2">
+						<div class="input-group">
+							<input type="number" onkeypress="return isNumberKey(event)" class="form-control" placeholder="Max" id="inputMax">
+						</div><!-- /input-group -->
+					</div><!-- /.col -->
+					<div class="col-lg-2">
+						<button class="btn btn-success" type="button" onClick="addCustomFilter()"> Add </button>
+					</div><!-- /.col -->
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</div>
+
+<script>
+$('#myModal').on('shown.bs.modal', function () {
+	$('#myInput').focus()
+})
+var column = null;
+
+$('#modal_custom_filter .dropdown-menu a').click( function () {
+    column = $(this).data('name');
+    console.log('column=' + column)
+});
+
+
+function addCustomFilter(){
+	if (column == null){
+		alert('Select a column first.') ;
+		return;
+	}
+
+	var min = $('#inputMin').val();
+	var max = $('#inputMax').val();
+	console.log('column=' + column + ', min=' + min + ', max='+max);
+	// filter = {'column':column, 'min':min, 'max':max}
+
+	var url = '' + window.location;
+	console.log('2');
+
+	if(min != null && min != ''){ 
+		url = updateQueryStringParameter(url, 'custom_filter_min', min); 
+	}
+	console.log('3');
+	if(max != null && max != ''){ 
+		url = updateQueryStringParameter(url, 'custom_filter_max', max); 
+	}
+	url = updateQueryStringParameter(url, 'custom_filter_name', column);
+	console.log('new url= ' + url);
+
+	var a=1/0;
+}
+
+//ref: http://stackoverflow.com/questions/2808184/restricting-input-to-textbox-allowing-only-numbers-and-decimal-point
+function isNumberKey(evt)
+       {
+          var charCode = (evt.which) ? evt.which : evt.keyCode;
+          if (charCode != 46 && charCode > 31 
+            && (charCode < 48 || charCode > 57))
+             return false;
+
+          return true;
+       }
+</script>

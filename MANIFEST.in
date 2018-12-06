@@ -1,0 +1,2 @@
+include urban_profiler/resources/address_suffix.csv
+include urban_profiler/resources/zip_codes.csv

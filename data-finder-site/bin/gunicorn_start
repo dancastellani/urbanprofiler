@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#Load staging configuration
+source /files/webapps/urbanprofiler/auto-etl/data-finder-site/bin/run-server-staging.sh
+
+NAME="urban_profiler"                                			# Name of the application
+BASEDIR=/files/webapps/urbanprofiler/auto-etl/data-finder-site
+DJANGODIR=$BASEDIR			             			# Django project directory
+SOCKFILE=/files/webapps/urbanprofiler/site/run/gunicorn.sock  		# we will communicte using this unix socket
+USER=urbanprofileruser                                     		# the user to run as
+GROUP=webapps                                     			# the group to run as
+NUM_WORKERS=17                                     			# how many worker processes should Gunicorn spawn
+DJANGO_SETTINGS_MODULE=data_finder.settings             		# which settings file should Django use
+DJANGO_WSGI_MODULE=data_finder.wsgi                     		# WSGI module name
+GUNICORN=/files/webapps/urbanprofiler/anaconda/bin/gunicorn
+
+echo "Starting $NAME as `whoami`"
+
+# Activate the virtual environment
+cd $DJANGODIR
+source /files/webapps/urbanprofiler/bin/activate
+export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
+export PYTHONPATH=$DJANGODIR:$PYTHONPATH
+
+# Create the run directory if it doesn't exist
+RUNDIR=$(dirname $SOCKFILE)
+test -d $RUNDIR || mkdir -p $RUNDIR
+
+#collectstatic
+/files/webapps/urbanprofiler/auto-etl/data-finder-site/./manage.py collectstatic --noinput
+
+# Start your Django Unicorn
+# Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
+exec newrelic-admin run-program $GUNICORN ${DJANGO_WSGI_MODULE}:application \
+  --name $NAME \
+  --workers $NUM_WORKERS \
+  --user=$USER --group=$GROUP \
+  --bind=unix:$SOCKFILE \
+  --log-level=info \
+  --log-file=-

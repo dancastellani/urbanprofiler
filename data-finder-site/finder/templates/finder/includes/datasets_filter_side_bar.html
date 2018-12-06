@@ -1,0 +1,174 @@
+{% load finder_extras %}
+
+<div class="panel panel-default" id="filters">
+	<div class="panel-heading">
+		<h3 class="panel-title"> <strong> Filters </strong>
+			<button onClick='reset_filters()' class="right btn btn-xs btn-danger" data-toggle="tooltip" data-placement="top" title="Remove all filters">Clear</button>
+		</h3>
+
+	</div>
+
+	<div class="panel-body">
+		<div class="row"> <!-- Filter Top - Search Box -->
+			<div class="col-md-12"> <!-- Search Box -->
+				<div class="input-group " data-toggle="tooltip" data-placement="bottom" title="Search datasets by Id, Name, Description, Tags, Category, City Agency/Source, Column Names, etc.">
+					<input type="text" class="form-control" placeholder="Search text" id="search_box" onkeydown="execute_if_enter_pressed(this, search_by_id)">
+					<span class="input-group-btn">
+						<button id="btn_search" type="button" class="btn btn-default" onClick="search_by_id()" >Search</button>
+						{% if 'DEVELOPMENT'|is_current_env %}
+						<button class="btn btn-success" data-toggle="modal" data-target="#modal_custom_filter">Custom</button>
+						{% include "finder/includes/modal_custom_filter.html" %}
+						{% endif %}
+					</span>
+				</div><!-- /input-group -->
+			</div> <!-- Search Box -->
+		</div>
+
+		<div class="row"><div class="col-md-12"> <!-- Select Filters -->
+
+		</div></div>
+	</div>
+	<!-- List group Categorical Filters -->
+	<ul class="list-group">
+		<!-- City Agency -->
+		<li class="list-group-item">
+			<h4 class="list-group-item-heading"> Source / City Agency </h4>
+			{% for item in options_source_agency %}
+			{% autoescape on %}
+			<p class="list-group-item-text">
+				<a href="{% url_add_query agency=item.0|escape_url %}">{{ item.0 }} 
+					{# <span class="badge">{{ item.1 }}</span> #}
+					<b>({{ item.1 }})</b>
+				</a>
+			</p>
+			{% endautoescape %}
+			{% endfor %}
+		</li>
+
+		<!-- Category -->
+		<li class="list-group-item">
+			<h4 class="list-group-item-heading"> Category </h4>
+			{% for item in options_category %} {% autoescape on %}
+			<p class="list-group-item-text">
+				<a href="{% url_add_query category=item.0|escape_url %}"> {{ item.0 }} 
+					<b>({{ item.1 }})</b>
+					{# <span class="badge">{{ item.1 }}</span> #}
+				</a>
+			</p>
+			{% endautoescape %} {% endfor %}
+		</li>
+
+		<!-- Update Frequency -->
+		<li class="list-group-item">
+			<h4 class="list-group-item-heading"> Update Frequency </h4>
+			{% for item in options_update_frequency %} {% autoescape on %}
+			<p class="list-group-item-text">
+				<a href="{% url_add_query update_frequency=item.0|escape_url %}">{{ item.0 }} 
+					{# <span class="badge">{{ item.1 }}</span> #}
+					<b>({{ item.1 }})</b>
+				</a>
+			</p>
+			{% endautoescape %} {% endfor %}
+		</li>
+
+		<!-- Column Types -->
+		<li class="list-group-item">
+			<h4 class="list-group-item-heading"> Profiler Column Types </h4>
+			<!-- Simple Types -->
+			{% for type in simple_types %}
+			<p class="list-group-item-text">
+				<a href="{% url_add_query column_type=type.0 %}"> {{type.0}} 
+					{# <span class="badge">{{ type.1 }}</span> #}
+					<b>({{ type.1 }})</b>
+				</a>
+			</p>
+			
+			<!-- Detailed Types -->
+			{% for d_type in detailed_types %}
+			{% if type.0 in d_type.0 and type.0 != d_type.0 %}
+			<p class="list-group-item-text-text">
+				<a href="{% url_add_query column_type=d_type.0 %}"> {{d_type.0}} 
+					{# <span class="badge">{{ d_type.1 }}</span> #}
+					<b>({{ d_type.1 }})</b>
+				</a>
+			</p>
+			{% endif %}
+			{% endfor %}
+			
+			{% endfor %}
+		</li>
+
+		<!-- Provided Types -->
+		<li class="list-group-item">
+			<h4 class="list-group-item-heading"> Provided Column Types </h4>
+			{% for s_type in options_socrata_type %}
+			<p class="list-group-item-text">
+				<a href="{% url_add_query provided_type=s_type.0 %}"> {{s_type.0}} 
+					{# <span class="badge">{{ s_type.1 }}</span> #}
+					<b>({{ s_type.1 }})</b>
+				</a>
+			</p>
+			{% endfor %}
+		</li>
+
+	</ul>
+</div>
+
+<script> 
+// Add the itens to lists with identation
+$( document ).ready(function() {
+	$('#filters .list-group-item-text').wrap( "<ul><li class='filter_item'></li></ul>" );
+	$('#filters .list-group-item-text-text').wrap( "<ul><li style='margin-bottom: -10px;'></li></ul>" );
+
+	// Add active to links on filter
+	$("#filters a").filter(function(){
+		return this.href == location.href.replace(/#.*/, "");
+	}).addClass("active");
+});
+
+function search_by_id(){
+	query = $( "#search_box" ).val();
+	updateQueryStringParameter(window.location.href, 'search_text', query)
+}
+
+function execute_if_enter_pressed(ele, func) {
+	if(event.keyCode == 13) {
+		func();
+	}
+}
+
+function updateQueryStringParameter(uri, key, value) {
+	var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+	var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+	if (uri.match(re)) {
+		window.location.href = uri.replace(re, '$1' + key + "=" + value + '$2');
+	}
+	else {
+		window.location.href = uri + separator + key + "=" + value;
+	}
+}
+
+//Initialize the search field
+$(document).ready(function(){
+	current_query = get_query_string_parmeter('search_text');
+	var input = $("#search_box");
+	input.val( current_query );
+
+	// if (current_query != null && current_query != ''){
+	// 	console.log("a");
+	// 	input[0].selectionStart = input[0].selectionEnd = input.val().length;
+	// }
+})
+
+function get_query_string_parmeter(key) {
+    key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx meta chars
+    var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));
+    return match && decodeURIComponent(match[1].replace(/\+/g, " "));
+}
+
+
+function reset_filters(){
+	// window.location.href.split('?')[0];
+	window.location = window.location.pathname;
+}
+</script>

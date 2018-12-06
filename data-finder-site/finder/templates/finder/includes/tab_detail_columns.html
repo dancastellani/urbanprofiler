@@ -1,0 +1,88 @@
+{% load humanize %}
+{% load finder_extras%}
+
+{% if not columns or columns|length_is:"0" %}
+<div class="alert alert-danger" role="alert">
+	<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+	No Column Data found
+</div>
+{% else %}
+<div class="container">
+	{% if column %}
+		<h2 class="page-header"> {{column.name}}
+		<div class="dropdown pull-right">
+			<button class="btn btn-default dropdown-toggle" type="button" id="dropdownColumns" data-toggle="dropdown" aria-expanded="true">
+				Change Column
+				<span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+				{% for a_column in columns %}
+				{% if a_column.name == column.name %}
+				<li role="presentation" class="active"><a data-toggle="tooltip" data-placement="left" title="Selected">{{a_column.name}}</a></li>
+				{% else %}
+				<li role="presentation"><a href="{% url 'finder:detail-database-column' db.database_id a_column.name %}">{{a_column.name}}</a></li>
+				{% endif %}
+				{% endfor %}
+				<li role="presentation"><a href="{% url 'finder:detail-database-tab' db.database_id 'columns'%}" >All - Return to Column List</a></li>
+			</ul>
+		</div>
+		</h2>
+		{% include "finder/includes/column_info.html" with column=column db=db id='details'%}
+
+	{% else %} <!-- Not detailing any column -->
+	<table class="table table-striped table-hover">
+		<head> <tr> 
+			<th> Name </th> 
+			
+			<th> Provided Type 
+				<span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="top" title="Extracted from Metadata Source (when available)"/>
+			</th> 
+			<th> Type 
+				<span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="top" title="Type identified by Profiler"/>
+			</th> 
+			<th> Most Detected Type 
+				<span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="top" title="To view details of detected types click on magnifying glass."/>
+			</th> 
+			<!-- <th> Unique Values 
+				<span class="glyphicon glyphicon-info-sign" data-toggle="tooltip" data-placement="top" title="Proportion calculated considering only valid values."/>
+			</th>  -->
+			<th> Missing </th> 
+			<th> Details </th> 
+		</tr> </head> 
+		<tbody>
+			{% for column in columns %}
+			<tr {% if column.name == db.socrata_unique_key %} class="info" {%endif%}> 
+				<td>
+					{% if column.name == db.socrata_unique_key %}
+					<span class="glyphicon glyphicon-lock" data-toggle="tooltip" data-placement="top" title="Unique Key indicated by Socrata."></span>
+					{% endif %}
+					<a href="{% url 'finder:detail-database-column' db.database_id|escape_url column.name|escape_url %}">{{ column.name }}</a>
+					{% if not column.original %}
+					<span class="glyphicon glyphicon-plus" data-toggle="tooltip" data-placement="top" title="Based on column {{column.based_on}}. Some databases have more than one value on the same column. Profiler automatically extract these nested columns into new columns to facilitate the analysis."></span>
+					{% endif %}
+				</td> 
+				<td>{{ column.socrata_type|default:'' }}</td> 
+				<td>{{ column.profiler_type|default:'' }}</td> 
+				<td>{{ column.profiler_type_most_detected|default:'' }} 
+					<span class="badge" data-toggle="tooltip" data-placement="right" title="Percentage of this type.">{{ column.profiler_type_most_detected_percent|floatformat }}%</span>
+					
+				</td> 
+				<!-- <td>{{ column.unique_percent|floatformat }}%</td>  -->
+				<td>{{ column.missing_percent|floatformat }}%</td> 
+				<td>
+					<a href="{% url 'finder:detail-database-column' db.database_id|escape_url column.name|escape_url %}"><span class="glyphicon glyphicon-search"></span></a>
+				</td> 
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	{% endif %}
+</div>
+{% endif %}
+
+
+
+<script>
+$(function () {$('[data-toggle="tooltip"]').tooltip()})
+$('.dropdown-toggle').dropdown()
+</script>

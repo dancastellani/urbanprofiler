@@ -1,0 +1,109 @@
+{% load staticfiles %}
+{% load humanize %}
+
+<script src="{% static 'd3/d3.v3.js' %}"></script>
+{# <script src="{% static 'finder/timeseries.js' %}"></script> #}
+<script src="{% static 'metricsgraphics/metricsgraphics.js' %}"></script>
+
+<div id='timeline-canvas'>
+{# 	{% include "finder/includes/google_chart.html" with title='Records by Month' data_from=api_url|add:api_timeline_query id='timeline' width="'100%'" height="'100%'" type='area' options="{hAxis: { textPosition: 'none' }}"%} #}
+<div id="div_area_chart_timeline" style="width:100%; height:100%"></div>
+</div>
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+  // Load the Visualization API and the piechart package.
+  google.load('visualization', '1.0', {'packages':['corechart']});
+  // Set a callback to run when the Google Visualization API is loaded.
+  google.setOnLoadCallback(fetch_timeline_data);
+  $(window).on("throttledresize", function (event) {
+    draw_timeline(context);
+  });
+
+  // Callback that creates and populates a data table,
+  // instantiates the pie chart, passes in the data and
+  // draws it.
+  var context = {};
+
+  function fetch_timeline_data() {
+	{% url 'api:timeline-data' as api_url %}
+  	var apiCall = "{{api_url|add:api_timeline_query|escapejs}}";
+  	// console.log('cal api:' + apiCall);
+    $.getJSON( apiCall, function( data ) { 
+
+      // console.log('JSON CALL');
+      // console.log(data);
+      context.chart_data = data;
+      if (data != null && data.length > 0 ){
+        draw_timeline(context);
+      }else{
+        console.log('No data retrieved to plot timeline.');
+      }
+    });
+  }
+
+  function draw_timeline(context){
+  	var chart_data = context.chart_data;
+    // Set chart options
+    var options = {
+      'title':'Timeline',
+      'is3D': true,
+      'titleTextStyle': {fontSize: 15, bold: true},
+      // animation:{
+      //     duration: 1000,
+      //     easing: 'out',
+      //   },
+      //This chart
+      chartArea: {width: "100%"},
+      hAxis: {
+            format: 'MMM, yyyy',
+            gridlines: {
+            			count: -1,
+            			units: {
+            			    years: {format: ['yyyy']},
+            			  }
+            			}
+          },
+        vAxis: { gridlines: { count: 2},
+        },
+    	legend: {position:'none'},
+    	maxTextLines: 1,
+    	explorer: { axis: 'horizontal', keepInBounds: true, maxZoomOut: 1 },
+    	// legend: {position: 'top'},
+    };
+    
+    // Instantiate and draw our chart, passing in some options.
+    var chart_div = document.getElementById("div_area_chart_timeline");
+    var chart = null;
+    var data = null;
+      
+	chart_data = [['Month-Year', "Records"]].concat(chart_data);
+
+	//Prepare data as Date
+	for (var i in chart_data){
+		// console.log(chart_data[i]);
+		from = chart_data[i][0].split('-')
+		chart_data[i][0] = new Date(from[0], from[1]-1);
+		// console.log(chart_data[i]);
+	}
+
+  chart = new google.visualization.AreaChart( chart_div );
+	// chart = new google.visualization.ColumnChart( chart_div );
+	chart.draw(new google.visualization.DataTable(), options);
+	data = new google.visualization.arrayToDataTable( chart_data );
+	var monthYearFormatter = new google.visualization.DateFormat({ pattern: "MMM yyyy" });
+	monthYearFormatter.format(data, 0);
+    chart.draw(data, options);
+  }
+
+  function prepareColors(data, colors){
+    if (colors != null){
+      data[0][data[0].length] = { role: 'style' }
+
+      for (i = 1; i < data.length; i++) { 
+        data[i][data[i].length] = colors[i-1];
+      }
+    }
+    return data
+  }
+  </script>

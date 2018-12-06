@@ -1,0 +1,81 @@
+{% extends "finder/base.html" %}
+{% load finder_extras %}
+{% load humanize %}
+
+{% block title %}Alarms{% endblock %}
+
+
+{% block content %}
+
+<div class='container-fluid'> 
+	<table class="table table-striped table-hover show-border">
+		<head> <tr> 
+			<th>Alarms</th> 
+			{# <th>Query</th>  #}
+			<th>Count</th> 
+			<th>Columns Triggering Alarm</th>
+		</tr> </head> 
+		<tbody>
+			{% for calarm in alarms %}
+			{% if calarm != alarm %}
+			<tr>
+				<td>
+					<strong><a href="{% url_add_query detail=calarm.id %}"/>{{calarm.name}}</a></strong>
+					{# <strong><a href="{% url 'finder:detail-alarm' calarm.id %}"/>{{calarm.name}}</a></strong> #}
+				</td> 
+				{# <td>{{calarm.query}}</td> #}
+				<td>{{calarm.count|intcomma}}</td>
+				<td style="width: 300px">
+					<div class="progress">
+						<div class="progress-bar progress-bar-warning" role="progressbar" aria-valuemin="0" aria-valuenow="{calarm.count|percent_of:columns_count}}"  aria-valuemax="100" style="min-width: 2em; width: {{calarm.count|percent_of:columns_count}}%">{{calarm.count|percent_of:columns_count}}%</div>
+					</div>
+				</td>
+			</tr>
+			{% endif %}
+			{% endfor %}
+		</tbody>
+	</table>
+
+	{% if alarm %}
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<strong> {{alarm.name}} <span class="badge">{{ results|length|intcomma }}</span> </strong>
+			<!-- <div style="width:50%;">
+				<div class="progress">
+					<div class="progress-bar progress-bar-warning" role="progressbar" aria-valuemin="0" aria-valuenow="{{alarm.count|percent_of:columns_count}}"  aria-valuemax="100" style=" min-width: 2em; width: {{alarm.count|percent_of:columns_count}}%">{{alarm.count|percent_of:columns_count}}%</div>
+				</div>
+			</div> -->
+		</div>
+
+		<div class='panel-body'> 
+			{% if results %}
+			<table class="table table-striped table-hover">
+				<head> <tr> 
+					<th>Dataset</th> 
+					<th>Column</th> 
+				</tr> </head> 
+				<tbody>
+					{% for column in results %}
+					<tr>
+						<td>
+							<a href="{% url 'finder:detail-database' column.database.database_id|escape_url %}">{{column.database.name}}</a>
+						</td> 
+						<td>
+							<a href="{% url 'finder:detail-database-column' column.database.database_id|escape_url column.name|escape_url%}">{{column.name}}</a>
+						</td> 
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			{% else %}
+			<p class="bg-danger">No results found for this alarm.</p>
+			{% endif %}
+		</div> 
+	</div> 
+	{% endif %}
+</div> 
+
+<script>
+$(function () {$('[data-toggle="tooltip"]').tooltip()})
+</script>
+{% endblock %}

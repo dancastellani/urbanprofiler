@@ -1,0 +1,39 @@
+{% load i18n %}
+{% load humanize %}
+{% load finder_extras %}
+
+<div class="modal fade bs-example-modal" id="modal_bins" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title" id="myModalLabel">Number of Horizontal and Vertical Bins</h4>
+			</div>
+
+			<div class="modal-body">
+				<div class="container">
+					<input id="inputNumBins" type="text" onkeypress='return event.charCode >= 48 && event.charCode <= 57' value="{{bins}}"></input>
+					<button onClick='updateBins()' class="btn btn-success">Update</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+$('#myModal').on('shown.bs.modal', function () {
+	$('#myInput').focus()
+})
+function updateBins(){
+	var bins = document.getElementById("inputNumBins").value;
+	// console.log('bins= ' + bins);
+	// console.log('uri= ' + window.location);
+	if (bins != null){
+		// console.log('new url= ' + updateQueryStringParameter(''+window.location, 'bins', bins));
+		window.location = updateQueryStringParameter(''+window.location, 'bins', bins);
+	}else{
+
+	}
+}
+</script>

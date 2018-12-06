@@ -1,0 +1,61 @@
+{% load humanize %}
+{% load finder_extras %}
+
+<div class="panel-group" id="accordion">
+
+	<!-- Same Category -->
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title"> <a href='#' data-toggle="collapse" data-target="#collapseOne">
+				Same Category <b>({{datasets_with_same_category|length}})</b>
+			</a></h4>
+		</div>
+		<div id="collapseOne" class="panel-collapse collapse">
+			<div class="panel-body">
+				{% if datasets_with_same_category %}
+				<ul>
+					{% for dataset in datasets_with_same_category %}
+					<li> <a href='{% url 'finder:detail-database' db.database_id %}'>{{dataset.title}}</a> </li>
+					{% endfor %}
+				</ul>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	<!-- Same Column Name -->
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title"> <a href='#' data-toggle="collapse" data-target="#collapseTwo">
+				Same Column Name <b>({{datasets_with_same_column_name|length}})</b>
+			</a></h4>
+		</div>
+		<div id="collapseTwo" class="panel-collapse collapse">
+			<div class="panel-body">
+				{% if datasets_with_same_column_name %}
+				<table class="table table-striped table-hover tablesorter">
+					<thead> <th>Dataset</th> <th>Column</th> </thead>
+
+					{% for column in datasets_with_same_column_name %}
+					<tr> 
+						<td> <a href='{% url 'finder:detail-database' column.database.database_id %}'>{{column.database.title}}</a> </td> 
+						<td> <a href="{% url 'finder:detail-database-column' column.database.database_id column.name %}">{{column.name}}</a> </td>
+					</tr>
+					{% endfor %}
+				</table>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+
+	
+</div> <!-- Close panel-group -->
+
+<script>
+//Close by default
+$( document ).ready(function() { 
+	$('.panel-collapse').collapse('hide');
+	$('.panel-title').attr('data-toggle', 'collapse');
+});
+</script>

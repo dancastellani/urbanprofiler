@@ -1,0 +1,36 @@
+{% load humanize %}
+{% load finder_extras %}
+
+<div class="alert alert-warning" role="alert">
+	<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+	<span class="sr-only">Attention:</span>
+	The following code samples are suposed to be used on CUSP Data Facility, on compute.
+</div>
+
+<div class="panel panel-default">
+	<div class="panel-heading"> <b>Load with <a href="http://pandas.pydata.org/">Pandas</a></b> </div>
+	<div class="panel-body">
+		To import this dataset on python with Pandas on the variable data, run this code inside Python or iPython Notebook:
+		<pre>import pandas
+data = pandas.read_csv('{{db.profiler_input_file}}')</pre>
+	</div>
+</div>
+
+<div class="panel panel-default">
+	<div class="panel-heading"> <b>Postgres SQL</b> </div>
+	<div class="panel-body">
+		To create a new Postgres table, run inside psql:
+		<pre>{{db.sql_postgres_create}}</pre>
+
+		To import this dataset on a Postgres database table, run inside psql:
+		<pre>{{db.sql_postgres_copy}}</pre>
+	</div>
+</div>
+
+<script>
+//Close by default
+$( document ).ready(function() { 
+	// $('.panel-collapse').collapse('hide');
+	// $('.panel-title').attr('data-toggle', 'collapse');
+});
+</script>

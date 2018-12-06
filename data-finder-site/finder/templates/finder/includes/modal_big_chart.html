@@ -1,0 +1,38 @@
+{% load i18n %}
+{% load humanize %}
+{% load finder_extras %}
+<div style="position:absolute; top:0px; right:0px">
+	<a><span class="blue glyphicon glyphicon-zoom-in" aria-hidden="true" data-toggle="modal" data-target="#modal_big_chart_{{id}}"></span></a>
+
+	<!-- Modal Big Chart-->
+	<div class="modal fade bs-example-modal-lg close-by-button-only" id="modal_big_chart_{{id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true"> 
+		<div class="modal-dialog-lg"  style="width:1200px">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title" id="myModalLabel">{{chart.title|default:'Chart Details'}}</h4>
+				</div>
+
+				<div class="modal-body">
+					<div class="container center-block">
+						<div class="row">
+							{% include "finder/includes/google_chart.html" with id="big_chart_"|concat:id data=chart.full_data|default:chart.data colors=chart.colors title=chart.title width=1150 height=600 type=chart.type%}
+						</div>
+						<div class="row center-block">
+							<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+								<h4 class='page-header'> Chart Data </h4>
+								<table class=" table table-striped ">
+									<tbody>
+										{% for data in chart.full_data|default:chart.data|eval %}
+										<tr><th>{{data.0}}</th> <td>{{data.1}}</td></tr>
+										{% endfor %}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

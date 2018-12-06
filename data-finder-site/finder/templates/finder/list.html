@@ -1,0 +1,103 @@
+{% extends "finder/base.html" %}
+{% block title %}Datasets{% endblock %}
+
+{% load finder_extras %}
+{% load humanize %}
+
+{% block content %}
+<div class="row">
+	<div class="col-sm-6 col-md-6 col-lg-3  filters-col">
+		<!-- ################# Filters ################# -->
+		{% include "finder/includes/datasets_filter_side_bar.html" %}
+	</div> <!-- Column content-filters -->
+
+	<div class="col-sm-6 col-md-6 col-lg-9 ">
+		{% if databases %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title"> 
+					<strong> Datasets <span class="badge">{{ query_result_count }}</span> </strong>
+					{% if is_paginated %}
+					<small>
+						<div class="right">
+							<span class="page-links">
+								{% if page_obj.has_previous %}
+								<a href="{% url_add_query page=page_obj.previous_page_number %}">previous</a>
+								{% endif %}
+								<span class="page-current">
+									Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+								</span>
+								{% if page_obj.has_next %}
+								<a href="{% url_add_query page=page_obj.next_page_number %}">next</a>
+								{% endif %}
+							</span>
+						</div>
+					</small>
+					{% endif %}
+				</h3>
+			</div>
+			<div class="panel-body">
+				<!-- TABLE -->
+				<div class="col-md-12">
+					<table class="table table-striped table-hover tablesorter">
+						<thead> <tr></tr> </thead>
+						<tbody>
+							{% for db in databases %}
+							<tr>
+								<td>
+									<!-- Title, Agency and Description -->
+									<b><a href="{% url 'finder:detail-database' db.database_id %}" 
+										{% if db.category %}
+										data-toggle="tooltip" data-placement="right" title="Category: {{db.category}}
+										{{ db.columns_count|intcomma }} column{{db.columns_count|pluralize}} and {{ db.rows|intcomma }} row{{db.rows|pluralize}} ({{ db.missing_percent|floatformat}}% missing)"
+										{% endif %}
+										/>{{db.name|default:db.database_id}}</a>
+										{% if  db.socrata_status_error %} <span class="glyphicon glyphicon-import red" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="There was an error retrieving metadata for this dataset."></span> {% endif %}
+
+										{% if  db.profiler_status_error %} <span class="glyphicon glyphicon-expand red" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="There was an error profiling this dataset."></span> {% endif %}
+
+										<div  class="pull-right">
+											{% if db.gps_values > 0 %}<a href="{% url 'finder:detail-database-map' db.database_id%}"><span class="glyphicon glyphicon-globe" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="View on Map"></span></a>{%endif%}
+											<a href="{% url 'finder:detail-database-data' db.database_id %}"><span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Explore Details"></span></a>
+											<a href="{% url 'finder:detail-database-charts' db.database_id %}"><span class="glyphicon glyphicon-stats" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Charts"></span></a>
+											<a target="_blank" href="https://nycopendata.socrata.com/-/-/{{db.database_id}}"><span class="glyphicon glyphicon-eye-open" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="View dataset"/></a>
+											<a href="https://nycopendata.socrata.com/api/views/{{db.database_id}}/rows.csv?accessType=DOWNLOAD"><span class="glyphicon glyphicon-download-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Download"/></a>
+										</div>
+										{% if db.source_agency %} <br/> {{db.source_agency}} {% endif %} </b>
+									</br>
+									{{db.description|default_if_none:''}}
+
+								</td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div> <!-- Column -->
+			</div> <!-- Panel Body -->
+		</div> <!-- Panel -->
+	</div> <!-- row -->
+
+	{% else %}
+	<div class="alert alert-danger" role="alert">
+		<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+		<span class="sr-only">Error:</span>
+		No Datasets available or no dataset found with desired filter. 
+		Please try another filter.
+	</div>
+	{% endif %}
+</div> <!-- Column content-filters -->
+
+
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+$(function () {
+	$('[data-toggle="tooltip"]').tooltip()
+})
+</script>
+
+{% endblock scripts %}
+

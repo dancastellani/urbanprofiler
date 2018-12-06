@@ -1,0 +1,11 @@
+# Profiler
+green==1.9.1
+nose==1.3.6
+coverage==3.7.1
+pandas==0.16.1
+wget==3.2
+usaddress==0.5.7
+
+# Spark
+findspark==1.1.0
+#IPython==5.0.1

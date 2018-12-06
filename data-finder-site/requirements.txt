@@ -1,0 +1,25 @@
+# Django - DataFinder website
+django==1.7.1
+django-basic-feedback==1.0.3
+django-debug-toolbar==1.3.0
+django-extensions==1.5.2
+django-like==0.2.0
+
+backend
+newrelic
+
+# Django rest framework and dependencies
+djangorestframework==3.1.3
+
+# Markdown support for the browsable API.
+markdown       
+
+# Filtering support
+django-filter==0.10.0
+
+# Database
+psycopg2
+
+# For CKAN integration
+ckanapi==3.5
+ckanclient==0.10

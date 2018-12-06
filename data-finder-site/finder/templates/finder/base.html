@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <!--meta http-equiv="X-UA-Compatible" content="IE=edge"-->
+    <!--meta name="viewport" content="width=device-width, initial-scale=1"-->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{% block title %}Home{% endblock title %} @ Urban Profiler</title>
+
+    {% load staticfiles %}
+    {% load finder_extras %}
+
+    <link rel="stylesheet" type="text/css" href="{% static 'finder/style.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap-theme.css' %}" />
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="{% static 'jquery/1.11.3/jquery-1.11.3.min.js' %}"></script>
+
+    <script src="{% static 'finder/helpers.js' %}"></script>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+
+</head>
+
+<body>
+    <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+    <!--      NAVIGATION BAR              -->
+    <nav class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container">
+        <div id='logos'>
+            <img src="{% static 'images/cusp-index.png' %}" id="logo-cusp">
+        </div>
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand">Urban Profiler</a>
+        <div >
+            <img src="{% static 'images/beta-ribbon.png' %}" id="beta-ribbon">
+        </div>
+        <!--<a class="navbar-brand" href="{% url 'finder:catalog_overview' %}">Data Finder</a>-->
+    </div>
+    <div id="navbar" class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li><a href="{% url 'finder:list' %}">Datasets</a></li>
+        <li><a href="{% url 'finder:search-map' %}">Search Map</a></li>
+        
+        <li><a href="{% url 'finder:alarms' %}">Alarms</a></li>
+        <li><a href="{% url 'finder:catalog_overview' %}">Overview</a></li>
+        {% if 'DEVELOPMENT'|is_current_env %}
+        <li><a href="{% url 'admin:index' %}">Admin</a></li>
+        {% endif %}
+    </ul>
+</div>
+<!--/.nav-collapse -->
+</div>
+</nav>
+
+<!--      CONTENT              -->
+<div class="container" id="content">
+    {% if error_message %}
+    <div class="alert alert-danger" role="alert"><b>Oh, no! We found a problem! </b>{{ error_message }}</div>
+    {% endif %}
+
+    {% block content %}{% endblock content %}
+
+    {% if is_paginated %}
+    <!-- .... **Now the pagination section** .... -->
+    <div class="pagination center-block">
+        <span class="page-links">
+            {% if page_obj.has_previous %}
+            <a href="{% url_add_query page=page_obj.previous_page_number %}">previous</a>
+            {% endif %}
+            <span class="page-current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+            {% if page_obj.has_next %}
+            <a href="{% url_add_query page=page_obj.next_page_number %}">next</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+</div>
+
+
+    <!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+
+{% block scripts %}{% endblock scripts %}
+
+<script>   
+    //Dont let modals close without x buton.
+    // $('div.modal').attr("data-backdrop","static");
+    // $('div.modal').attr("data-keyboard", "false");
+    var url = window.location;
+    // Will only work if string in href matches with location
+    $('ul.nav a[href="'+ url +'"]').parent().addClass('active');
+
+    // Will also work for relative and absolute hrefs
+    $('ul.nav a').filter(function() {
+        return this.href == url;
+    }).parent().addClass('active');
+    </script>   
+
+    <!-- Google Analytics -->
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-65529543-1', 'auto');
+  ga('send', 'pageview');
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{% load staticfiles %}
+<script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+
+<!-- ref of bootstrap-datepicker:
+http://eternicode.github.io/bootstrap-datepicker/?markup=range&format=&weekStart=&startDate=&endDate=&startView=0&minViewMode=0&todayBtn=linked&clearBtn=true&language=en&orientation=auto&multidate=&multidateSeparator=&todayHighlight=on&keyboardNavigation=on#sandbox
+-->
+<div class="modal fade" id="modal_filter_by_date" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="myModalLabel">Date Filter</h4>
+			</div>
+			<div class="modal-body">
+				<div id='date-picker-container'>
+					<!-- Date-Picker -->
+					<div class="input-daterange input-group" id="datepicker">
+						<input id="input-start" type="text" class="input-sm form-control" name="start" placeholder="mm/dd/yyyy"/>
+						<span class="input-group-addon">to</span>
+						<input id="input-end" type="text" class="input-sm form-control" name="end" placeholder="mm/dd/yyyy"/>
+					</div>
+						<input id="input-hidden-start" type="hidden"/>
+						<input id="input-hidden-end" type="hidden"/>
+					<!-- /Date-Picker -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-info" onclick="filterByDate()">Filter</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+$('#date-picker-container .input-daterange').datepicker({
+	// format: "yyyy/mm/dd",
+	// startDate: "2000/01/01",
+	// endDate:"2016/01/01",
+	immediateUpdates:true,
+	// keyboardNavigation:false,
+	// todayBtn: "linked",
+	clearBtn: true,
+	// forceParse: false,
+	todayHighlight: true
+});
+
+function filterByDate(){
+	console.log("filterByDate");
+	var start = $('#input-start').val();
+	var end = $('#input-end').val();
+
+	dateRange = start + '-' + end;
+	url = updateQueryStringParameter(window.location.href, 'date_range', dateRange);
+}
+$(document).ready(function(){
+	var dateRange = getQueryStringParameter('date_range');
+	var dates = dateRange.split('-');
+	$('#input-start').val(dates[0]);
+	$('#input-end').val(dates[1]);
+});
+</script>

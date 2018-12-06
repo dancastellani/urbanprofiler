@@ -1,0 +1,95 @@
+{% extends "finder/base.html" %}
+{% block title %}{{ db.database_id }} 
+Details
+{% endblock title%}
+{% load staticfiles %}
+
+
+{% block content %}
+
+<h1>{{ db.name|default:db.database_id }}
+
+  <div class="pull-right highlight" id="dataset-actions">
+    <small>
+      {# <span class="glyphicon glyphicon-exclamation-sign gray" aria-hidden="true"></span> #}
+      <!-- Links -->
+      {% if db.hue_url %}
+      <a target="_blank" href="{{db.hue_url}}">
+        <img class='hue-logo' src="{% static 'images/hue-logo-mini-white.png' %}" id="logo-hue" data-toggle="tooltip" data-placement="top" title="Explore on Hue"/>
+      </a>
+      {% elif db.show_input_file %}
+      <a target="_blank" href="https://nycopendata.socrata.com/-/-/{{db.database_id}}"><span class="glyphicon glyphicon-eye-open" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="View dataset"/></a>
+      {% endif %}
+
+      {% if db.show_input_file %}
+      <a href="https://nycopendata.socrata.com/api/views/{{db.database_id}}/rows.csv?accessType=DOWNLOAD"><span class="glyphicon glyphicon-download-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Download CSV"/></a>
+      {% else %}
+      <a><span class="red glyphicon glyphicon-lock" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="This dataset is not open."/></a>
+
+      {% endif %}
+    </small>
+  </div>
+
+</h1>
+{% if db.description %}
+<div class="row">
+  <div class="col-md-12">
+    <h4> {{ db.description }} </h4>
+  </div>
+</div>
+{% endif %}
+
+<ul class="nav nav-tabs">
+  <li {% if tab == 'data' %} class="active" {% endif %}><a href="{% url 'finder:detail-database-data' db.database_id %}"> 
+    <span class="glyphicon glyphicon-qrcode" aria-hidden="true"></span> Metadata</a>
+  </li>
+
+  {% if db.columns_count > 0 %}<li {% if tab == 'columns' %} class="active" {% endif %}><a href="{% url 'finder:detail-database-columns' db.database_id %}">
+  <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span> 
+  {{columns_count}} Column{{columns_count|pluralize}}</a>
+</li>{% endif %}
+
+{% if db.profiler_status == 'OK' %}<li {% if tab == 'charts' %} class="active"{% endif %}><a href="{% url 'finder:detail-database-charts' db.database_id %}"> 
+<span class="glyphicon glyphicon-stats" aria-hidden="true"></span> Charts</a>
+</li>{% endif %}
+
+{% if db.gps_values > 0 %}
+<li {% if tab == 'map' %} class="active"{% endif %}><a href="{% url 'finder:detail-database-map' db.database_id%}">  
+  <span class="glyphicon glyphicon-globe" aria-hidden="true"></span> Map</a>
+</li>
+{% endif %}
+
+<li {% if tab == 'related-datasets' %} class="active"{% endif %}><a href="{% url 'finder:detail-related-datasets' db.database_id %}"> 
+  <span class="glyphicon glyphicon-link" aria-hidden="true"></span> Related Datasets</a>
+</li>
+
+<li {% if tab == 'dataset-help' %} class="active"{% endif %}><a href="{% url 'finder:detail-dataset-help' db.database_id %}"> 
+  <span class="glyphicon glyphicon-flash" aria-hidden="true"></span> Code Snippets </a>
+</li>
+
+</ul>
+
+{% if tab == 'map' %}
+{% include "finder/includes/tab_detail_map.html" %}
+
+{% elif tab == 'charts' %}
+{% include "finder/includes/tab_detail_charts.html" %}
+
+{% elif tab == 'columns' %}
+{% include "finder/includes/tab_detail_columns.html" %}
+
+{% elif tab == 'related-datasets' %}
+{% include "finder/includes/tab_related_datasets.html" %}
+
+{% elif tab == 'dataset-help' %}
+{% include "finder/includes/tab_dataset_helps.html" %}
+
+{% else %} <!-- default tab -->
+{% include "finder/includes/tab_detail_data.html" %}
+{% endif %}
+
+{% endblock content %}
+
+
+
+

@@ -1,0 +1,1 @@
+PYTHONPATH=$PYTHONPATH:../ python manage.py runscript import_summary --script-args=$@

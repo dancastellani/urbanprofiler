@@ -1,0 +1,401 @@
+
+{% if db.has_bounding_box %}
+{% load humanize %}
+<!-- ################# Bar ################# -->
+<nav class="navbar navbar-default" role="navigation">
+  <div class="container-fluid">
+    <div class="col-lg-12">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <a class="navbar-brand">GPS 
+          <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Number of points on map.">{{db.gps_values|intcomma}}</span>
+        </a>
+      </div>
+
+      <!-- Butons -->
+      
+      <input class="btn btn-info navbar-btn" id="btnBoundingBox" type="button" value="Hide Bounding Box" onclick="toggleBox();" />
+
+      {# <input class="btn btn-info navbar-btn" id="btnSquaredHeatmap" type="button" value="Show Squared Heatmap" onclick="toggleSquaredHeatmap();" /> #}
+      <input class="btn btn-info navbar-btn" id="btnHeatmap" type="button" value="Show Heatmap" onclick="toggleHeatmap(context);"/>
+      <!-- Squared Heatmap -->
+<!--
+      <div class="btn-group">
+        <button type="button" class="btn btn-info" onclick="toggleSquaredHeatmap();" id="btnSquaredHeatmap">Show Squared Heatmap</button>
+        <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span class="caret"></span>
+          <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu">
+          <li><a href='#' data-toggle="modal" data-target="#modal_bins">Change Bins</a></li>
+        </ul>
+      </div>
+      {# {% include "finder/includes/modal_map_bins.html" %} #}
+-->
+       <input class="btn btn-info navbar-btn" id="btnPoints" type="button" value="Show Points" onclick="togglePoints(context);" />
+
+      <input class="btn btn-default navbar-btn navbar-right" id="centerMapInNYC" type="button" value="Center Map in NYC" onclick="centerMapInNYC();" />
+      <input class="btn btn-default navbar-btn navbar-right" id="centerMapInData" type="button" value="Center Map in DB Center" onclick="centerMapInDataCenter();" visible='false'/>
+    </ul>
+  </div><!-- /.col-lg-12 -->
+</div><!-- /container-fluid -->
+</nav>
+
+<div class="shadow" id="map-canvas">
+  Loading map...
+</div>
+
+<div id='timeline-area'>
+  {% include "finder/includes/timeline.html" %}
+</div>    
+
+{% else %}
+<div class="alert alert-danger" role="alert">
+  <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+  No GPS Data to build Bounding Box
+</div>
+{% endif %}
+
+
+{% block scripts %}
+
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=visualization"></script>
+<script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerwithlabel/1.1.5/src/markerwithlabel_packed.js"></script>
+{% load staticfiles %}
+<script type="text/javascript" src="{% static 'google-maps-utility-library-v3/markerclusterer.js' %}"></script>
+
+<script>
+$('.dropdown-toggle').dropdown()
+
+{% autoescape off %}
+
+var NYC_CENTER_LAT = 40.743849
+var NYC_CENTER_LONG = -73.999289
+var NYC_CENTER = new google.maps.LatLng(NYC_CENTER_LAT, NYC_CENTER_LONG);
+var db_box;
+
+function centerMapInNYC() {
+  map.setCenter(NYC_CENTER);
+  $('#centerMapInNYC').toggle();
+  $('#centerMapInData').toggle();
+}
+
+function centerMapInDataCenter() {
+  map.setCenter(new google.maps.LatLng({{db.lat_center}}, {{db.long_center}}));
+  map.fitBounds(db_box.getBounds());
+  $('#centerMapInData').toggle();
+  $('#centerMapInNYC').toggle();
+}
+
+function toggleSquaredHeatmap(){
+  if ( context.squares_data == null ){
+
+    window.alert('Please wait, this action can take some time.');
+    // console.log('JSON CALL');
+    $.getJSON( "{% url 'api:dataset-squared-heatmap-data' db.database_id %}", function( data ) { 
+      // console.log('JSON DATA:');
+      // console.log(data);
+
+      context.squares_data = data;
+
+      do_toggleSquaredHeatmap(context);
+    });
+  }else{
+    do_toggleSquaredHeatmap(context);
+  }
+}
+
+var square_box_list = []
+function do_toggleSquaredHeatmap(context){
+  var squares = context.squares_data.squares;
+
+  if (square_box_list.length == 0){
+
+    var lat_min = context.squares_data.lat_min;
+    var lat_size = context.squares_data.lat_size;
+    var long_min = context.squares_data.long_min;
+    var long_size = context.squares_data.long_size;
+    var squares = context.squares_data.squares;
+
+    var max_value = squares[0][0]
+    for (i = 0; i < squares.length; i++){
+      for (j = 0; j < squares[0].length; j++){
+        if (squares[i][j] > max_value){max_value = squares[i][j]}
+      }  
+  }
+
+  for (i = 0; i < squares.length; i++){
+    for (j = 0; j < squares[0].length; j++){
+      var value = squares[i][j];
+      if (value > 0){
+        console.log('[' + i + ']['+ j + '] = '+ value);
+        var sw_lat = lat_min + i*lat_size;
+        var sw_long = long_min + j*long_size;
+        var ne_lat = lat_min + (i+1)*lat_size;
+        var ne_long = long_min + (j+1)*long_size;
+        var path = [
+        new google.maps.LatLng(sw_lat, sw_long),
+        new google.maps.LatLng(sw_lat, ne_long),
+        new google.maps.LatLng(ne_lat, ne_long),
+        new google.maps.LatLng(ne_lat, sw_long)
+        ]
+        createPolygonWithLabel(path, value, value / max_value, context.map);
+      }
+    }  
+  }
+}
+if (document.getElementById('btnSquaredHeatmap').value == 'Show Squared Heatmap'){
+  console.log('Show Squared Heatmap')
+  for (i = 0; i < square_box_list.length; i++){ square_box_list[i].setVisible(true); }
+    document.getElementById('btnSquaredHeatmap').value = 'Hide Squared Heatmap'
+}else{
+  console.log('Hide Squared Heatmap')
+  for (i = 0; i < square_box_list.length; i++){ square_box_list[i].setVisible(false); }
+    document.getElementById('btnSquaredHeatmap').value = 'Show Squared Heatmap'
+}
+}
+
+function createPolygonWithLabel(path, value, opacity, map){
+  console.log('path')
+  console.log(path)
+  console.log('value')
+  console.log(value)
+  console.log('opacity')
+  console.log(opacity)
+
+  var color;
+  if (opacity < 0.4){
+    color = '#00FF00' //green
+  }else if(opacity < 0.75){
+    color = '#FFFF00' //yellow
+  }else { // opacity > 0.75
+    color = '#FF0000' //red
+    if (opacity > 0.9){opacity = 0.9}
+  }
+min_opacity = 0.3;
+console.log('AAA')
+if (opacity < min_opacity){opacity = min_opacity}
+
+  var label = value;
+  // console.log('DEBUG: MAP=' + map)
+  poly = new google.maps.Polygon({
+    paths: path,
+    strokeColor: color,
+    strokeOpacity: 1,
+    strokeWeight: 1,
+    fillColor: color,
+    fillOpacity: opacity,
+    map: map,
+    zIndex: 3,
+  });
+console.log('BBB')
+  square_box_list.push(poly);
+
+  // Create label
+  // console.log('Add label: ' + label)
+  poly.set('strokeOpacity', 1);
+  var marker = new MarkerWithLabel({
+    position: new google.maps.LatLng(0,0),
+    draggable: false,
+    raiseOnDrag: false,
+    map: map,
+    labelContent: label,
+    labelAnchor: new google.maps.Point(30, 20),
+      labelClass: "labels", // the CSS class for the label
+      labelStyle: {opacity: 1.0},
+      icon: "http://placehold.it/1x2",
+      visible: false
+    });
+  google.maps.event.addListener(poly, "mousemove", function(event) {
+    marker.setPosition(event.latLng);
+    marker.setVisible(true);
+  });
+  google.maps.event.addListener(poly, "mouseout", function(event) {
+    marker.setVisible(false);
+  });
+console.log('CCC')
+}
+
+
+var context = {
+  plot_data: null,
+  markers: null,
+  points_on_map: [],
+  squares_data: null,
+  map: null
+}
+
+{# Not for squared Heatmap, but for Google #}
+var heatmap;
+function toggleHeatmap(context){
+  if ( context.plot_data == null ){
+
+    window.alert('Please wait, this action can take some time.');
+    $.getJSON( "{% url 'api:dataset-gps-points' db.database_id %}", function( data ) { 
+
+      // console.log('JSON CALL');
+      // console.log(data);
+
+      context.plot_data = []
+      for (i = 0; i < data.length; i++) { 
+        // console.log('data[i]=' + data[i]);
+        a_point = { location: new google.maps.LatLng(data[i][0], data[i][1]), weight: data[i][2] };
+        context.plot_data.push( a_point );
+      }
+      do_toggleHeatmap(context);
+    });
+  }else{
+    do_toggleHeatmap(context);
+  }
+}
+function do_toggleHeatmap(){
+  if ( heatmap == null ){
+    heatmap = new google.maps.visualization.HeatmapLayer( { data: context.plot_data } );
+    heatmap.set('opacity', 0.8)
+  }
+
+  if (heatmap.getMap() == null){
+    heatmap.setMap(map);
+    document.getElementById('btnHeatmap').value = (' Hide Heatmap');
+  }else{
+    heatmap.setMap(null);
+    document.getElementById('btnHeatmap').value = ('Show Heatmap');
+  }
+}
+
+function togglePoints(context){
+  if ( context.plot_data == null ){
+
+    $.getJSON( "{% url 'api:dataset-gps-points' db.database_id %}", function( data ) { 
+
+      // console.log('JSON CALL');
+      // console.log(data);
+
+      context.plot_data = []
+      for (i = 0; i < data.length; i++) { 
+        // console.log('data[i]=' + data[i]);
+        a_point = { location: new google.maps.LatLng(data[i][0], data[i][1]), weight: data[i][2] };
+        context.plot_data.push( a_point );
+      }
+      do_togglePoints(context);
+    });
+  }else{
+    do_togglePoints(context);
+  }
+}
+
+function do_togglePoints(context){
+  if (context.markers == null) {
+    console.debug('Creating markers')
+    context.markers = [];
+    //https://developers.google.com/chart/infographics/docs/dynamic_icons
+    var base_url = 'https://chart.googleapis.com/chart?';
+    var icon_url = null;
+    var weight = null;
+    for (var i = 0; i < context.plot_data.length; i++) {
+      var marker;         
+      weight = context.plot_data[i].weight;
+      if (weight < 100){
+        icon_url = base_url + 'chst=d_map_pin_letter_withshadow&chld=' + weight + '|F00|FFF'
+      }else{
+        icon_url = base_url + 'chst=d_bubble_text_small_withshadow&chld=bb|' + weight + '|F00|FFF'
+        console.log('icon: ' + icon_url)
+      }
+      marker = new google.maps.Marker({position: context.plot_data[i].location, 
+        title: 'Records: ' + context.plot_data[i].weight,
+        icon: icon_url,
+        weight: context.plot_data[i].weight});
+
+      context.markers.push(marker);
+    }
+    var calc = function(markers, numStyles) {
+      // console.debug('calc()');
+      var weight=0;
+
+      for(var i=0;i<markers.length;++i){
+        weight+=markers[i].weight;
+      }
+      // console.debug('weight:' + weight);
+      return {
+        text: weight,
+        index: Math.min(String(weight).length, numStyles)
+      };
+    };
+  }
+
+  
+  console.debug('Markers Created');
+  // window.alert('Please wait, markers can delay to appear.');
+
+  if (document.getElementById('btnPoints').value == 'Show Points'){
+    console.log('Show Points');
+    // toggleBox();
+    mcoptions = {
+      gridSize: 100,
+      minimumClusterSize: 5,
+      printable: true,
+      title: 'Number of points in cluster.',
+      // calculator: calc,
+    };
+    markerCluster = new MarkerClusterer(context.map);
+    markerCluster.setOptions(mcoptions);
+    markerCluster.setCalculator(calc);
+    markerCluster.addMarkers(context.markers); 
+
+    document.getElementById('btnPoints').value = 'Hide Points'
+  }else{
+    console.log('Hide Points')
+    markerCluster.clearMarkers();
+    document.getElementById('btnPoints').value = 'Show Points'
+  }
+}
+
+
+
+
+function toggleBox(){
+  if (db_box.getMap() == null){
+    db_box.setMap(map);
+    document.getElementById('btnBoundingBox').value = (' Hide Bounding Box');
+  }else{
+    db_box.setMap(null);
+    document.getElementById('btnBoundingBox').value = ('Show Bounding Box');
+  }
+}
+
+function initialize() {
+  // init_plot_data(context);
+
+  map = new google.maps.Map(document.getElementById('map-canvas'), {
+    zoom: 11,
+    center: new google.maps.LatLng({{db.lat_center}}, {{db.long_center}})
+  });
+  context.map = map;
+
+  db_box = new google.maps.Rectangle({
+    strokeColor: '#F00',
+    strokeOpacity: 0.5,
+    strokeWeight: 2,
+    fillColor: '#F00',
+    fillOpacity: 0.1,
+    map: map,
+    bounds: new google.maps.LatLngBounds(
+      new google.maps.LatLng({{ db.lat_min }}, {{ db.long_min }}),
+      new google.maps.LatLng({{ db.lat_max }}, {{ db.long_max }})
+      )
+  });
+  map.fitBounds(db_box.getBounds());
+  $('#centerMapInData').toggle()
+}
+google.maps.event.addDomListener(window, 'load', initialize);
+{% endautoescape %}
+
+// $( window ).load(function() {
+//     console.log( "ready!");
+//   {% if type == 'heatmap' %}
+//     toggleHeatmap(); 
+//   {% endif %}
+// });
+</script>
+
+{% endblock scripts %}

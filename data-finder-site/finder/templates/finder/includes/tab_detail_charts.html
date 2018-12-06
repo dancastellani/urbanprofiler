@@ -1,0 +1,25 @@
+<div class="chart">
+	{% include "finder/includes/google_chart.html" with data=column_type_counts.data id='column_type_counts' colors=column_type_counts.colors title='Column Types' width=380 height=300%}
+</div>
+
+<div class="chart">
+	{% include "finder/includes/google_chart.html" with data=column_detailed_type_counts.data id='column_detailed_type_counts' colors=column_detailed_type_counts.colors width=710 height=300 title='Most Detected Types'%}
+</div>
+
+<div class="chart">
+	{% include "finder/includes/google_chart.html" with data=columns_unique_percent.data id='columns_unique_percent' width=1150 height=300 title='Unique Values' colors=columns_unique_percent.colors legend='"All Values", "Unique Values"' type='column'%}
+</div>
+
+<div class="chart">
+	{% include "finder/includes/google_chart.html" with data=columns_missing_values.data id='columns_missing_values' width=1150 height=300 title='Missing Values per Column' colors=columns_missing_values.colors legend='"Values", "Missing"' type='column'%}
+</div>
+
+ <div class="chart">
+	{% include "finder/includes/google_chart.html" with data=missing_relation.data id='missing_relation' width=400 height=300 title='Values' colors=missing_relation.colors chart='pie'%}
+</div>
+ <!--
+ <h3>More Charts?</h3>
+<ul>
+</ul>
+-->
+
