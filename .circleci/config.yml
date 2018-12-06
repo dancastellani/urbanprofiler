@@ -49,6 +49,7 @@ jobs:
           command: |
             . venv/bin/activate
             make test
+            coverage xml
 
       - store_artifacts:
           path: test-reports
