@@ -46,7 +46,9 @@ jobs:
       # https://nose.readthedocs.io
       - run:
           name: run tests
-          command: make test
+          command: |
+            . venv/bin/activate
+            make test
 
       - store_artifacts:
           path: test-reports
